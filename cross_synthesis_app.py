@@ -98,7 +98,7 @@ def get_istft(stft, R):
         idx = m*R
         windowed_signal = (np.fft.ifft(stft[:, m])).real
         signal[(idx):idx+nfft] += windowed_signal
-    return signal * (1/nfft)
+    return signal * 10*(1/nfft)
 
 
 def plot_spectrogram(stft, fs, R, idx, title="", colorbar=False):    
@@ -277,14 +277,17 @@ if __name__ == "__main__":
     fs_car, carrier = wavfile.read(f'carriers/{carrier}')
     print(w_fn)
     # make sure files are the same sample rate and length
-
     fs = min(fs_mod, fs_car)
-    modulator = signal.resample(modulator, fs)
-    carrier = signal.resample(carrier, fs)
+    modulator = signal.resample(modulator, (len(modulator)//fs_mod)*fs)
+    carrier = signal.resample(carrier, (len(carrier)//fs_car)*fs)
 
     carrier = carrier[:min(len(modulator), len(carrier))]
     modulator = modulator[:min(len(modulator), len(carrier))]
-
+    if len(carrier.shape) > 1:
+        carrier = carrier[:,0]
+    if len(modulator.shape) > 1:
+        modulator = modulator[:,0]
+    print(f'carrier shape is {carrier.shape}, and modulator shape is {modulator.shape}')
     # Normalize signals
     carrier = carrier/(np.max(carrier))
     modulator = modulator/(np.max(modulator))
@@ -303,5 +306,12 @@ if __name__ == "__main__":
             w=w_fn,
             plot=plot
         )
-    sd.play(cross_synth_audio, fs // 2)
+    print("modulator sounds like: ")
+    sd.play(modulator, fs)
+    sd.wait()
+    print("carrier sounds like: ")
+    sd.play(carrier, fs)
+    sd.wait()
+    print("and together they sound like")
+    sd.play(cross_synth_audio, fs)
     sd.wait()
