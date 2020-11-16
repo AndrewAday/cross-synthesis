@@ -14,7 +14,6 @@ from IPython.display import Audio
 from scipy.io import wavfile
 from scipy import signal
 import argparse
-from pathlib import Path 
 import simpleaudio as same
 import sounddevice as sd
 
@@ -34,12 +33,7 @@ def get_bartlett(L):
     return np.concatenate((half, np.flip(half)))
 def get_hanning(L):
     """ returns coefficients for hanning window of length L"""
-    ''' 50% overlap 
-         np.ones(1024), run hanning, run through istft
-    '''
-    return 0.5* (1.001-np.cos(2*np.pi*np.arange(L)/L))
-
-
+    return 0.5* (1-np.cos(2*np.pi*np.arange(L)/L+1))
 
 #==============STFT Functions===============#
 def get_windowed_signal(signal, L, R, w=None):
@@ -50,20 +44,13 @@ def get_windowed_signal(signal, L, R, w=None):
     xms = np.array([np.zeros(L)]).T  # ini
     signal = np.concatenate([np.zeros(L//2), signal, np.zeros(L//2)])  # for COLA reconstruction
         # TODO: do we need to strip these zeros in istft?
-#     print(signal)
     ms = range(0, len(signal), R)
     for m in ms:
-#         print(f'frame is {m} and x frame is {signal[m:]}')
         xm = signal[m:m+L].copy()
-#         print(f'frame is {m} and x frame is {xm}')
         if len(xm) < L:
             xm = np.concatenate([xm, np.zeros(L-len(xm))])
         if w is not None:  # apply window fn
-#             print(f'the window we are multiplying our frame by is {w(L)}')
-#             print(f'xm is now {xm}, and signal is {signal[m:]}')
-
             xm *= w(L)
-#             print(f'xm is now {xm}, and signal is {signal[m:]}')
         xm = np.array([xm]).T
         xms = np.hstack([xms,xm])
     return xms[:, 1:]  # discard first column of all zeros
@@ -98,8 +85,7 @@ def get_istft(stft, R):
         idx = m*R
         windowed_signal = (np.fft.ifft(stft[:, m])).real
         signal[(idx):idx+nfft] += windowed_signal
-    return signal * 10*(1/nfft)
-
+    return signal 
 
 def plot_spectrogram(stft, fs, R, idx, title="", colorbar=False):    
     """
@@ -257,9 +243,8 @@ if __name__ == "__main__":
         if mod_files[f] != '.DS_Store':    
             print(f'({f}) : {mod_files[f]}')
     modulator = mod_files[int(input('Enter the number for the file you would like to choose: '))]
+    
     # grabbing arguments from command line
-    # modulator = args.modulator_file
-    # carrier = args.carrier_file
     M = int(args.M)
 
     L = int(args.L )
