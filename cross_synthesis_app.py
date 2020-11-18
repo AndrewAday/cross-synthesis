@@ -260,14 +260,13 @@ if __name__ == "__main__":
         w_fn = ws[w]
     fs_mod, modulator = wavfile.read(f'modulators/{modulator}')
     fs_car, carrier = wavfile.read(f'carriers/{carrier}')
-    print(w_fn)
     # make sure files are the same sample rate and length
     fs = min(fs_mod, fs_car)
     modulator = signal.resample(modulator, (len(modulator)//fs_mod)*fs)
     carrier = signal.resample(carrier, (len(carrier)//fs_car)*fs)
 
-    carrier = carrier[:min(len(modulator), len(carrier))]
-    modulator = modulator[:min(len(modulator), len(carrier))]
+    carrier = carrier[:min(min(len(modulator), len(carrier)), 100000)]
+    modulator = modulator[:min(min(len(modulator), len(carrier)), 100000)]
     if len(carrier.shape) > 1:
         carrier = carrier[:,0]
     if len(modulator.shape) > 1:
