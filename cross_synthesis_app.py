@@ -7,6 +7,7 @@ argument: flag to flatten spectrum (--flatten, optional, default False)
 argument: flag to plot the spectrograms (--plot, optional, default False)
 """
 #==============Imports and Load Audio===============#
+import sys
 import numpy as np
 import os.path
 import matplotlib.pyplot as plt
@@ -55,7 +56,7 @@ def get_windowed_signal(signal, L, R, w=None):
     return xms[:, 1:]  # discard first column of all zeros
 
 
-def get_stft(windowed_signal, nfft=None):
+def get_stft(windowed_signal, nfft=None, log=False):
     """
     :param windowed_signal: windowed signal matrix
     :param nfft: the size of the dft.
@@ -67,9 +68,14 @@ def get_stft(windowed_signal, nfft=None):
     ms = windowed_signal.shape[1]
     dfts = np.array([np.zeros(nfft)]).T
     for m in range(ms):
+        if log:
+            sys.stdout.write(f"{m+1}/{ms} windows transformed \r")
+            sys.stdout.flush()
         xm = windowed_signal[:, m]
         freq_window = np.array([np.fft.fft(xm, nfft)]).T
         dfts = np.hstack([dfts, freq_window])
+    if log:
+        print("\n")
     return dfts[:, 1:]
 
 
@@ -156,7 +162,7 @@ def gen_lp_coeffs(x, M):
     return np.concatenate(([1], coeffs))
 
 
-def gen_lpc_spec_envs(windowed_modulator, M, nfft):
+def gen_lpc_spec_envs(windowed_modulator, M, nfft, log=False):
     """
     :param windowed_modulator: matrix where each column is a windowed signal
     :param M: order of linear predictor
@@ -174,12 +180,18 @@ def gen_lpc_spec_envs(windowed_modulator, M, nfft):
             spec_envs, 
             spec_env
         ])
+        if log:
+            sys.stdout.write(f"{m+1}/{num_frames} envelopes extracted\r")
+            sys.stdout.flush()
+    if log:
+        print("\n")
+
     return spec_envs[:, 1:]
     
 
 #==============Cross-Synthesis===============#
 
-def cross_synthesize(fs, carrier, modulator, L, R, M, flatten=False, w=None, plot=False):
+def cross_synthesize(fs, carrier, modulator, L, R, M, flatten=False, w=None, plot=False, log=False):
     """
     :param fs: sample rate
     :param carrier: carrier signal in time
@@ -199,25 +211,33 @@ def cross_synthesize(fs, carrier, modulator, L, R, M, flatten=False, w=None, plo
     windowed_carrier = get_windowed_signal(carrier, L, R, w=w)
     windowed_modulator = get_windowed_signal(modulator, L, R, w=w)
     
-    carrier_stft = get_stft(windowed_carrier, nfft)
-    modulator_stft = get_stft(windowed_modulator, nfft)
+    print(f"performing carrier stft") 
+    carrier_stft = get_stft(windowed_carrier, nfft, log=log)
+    print(f"performing modulator stft") 
+    modulator_stft = get_stft(windowed_modulator, nfft, log=log)
     if plot:
         plot_spectrogram(carrier_stft, fs, R, 1, title="original carrier")
         plot_spectrogram(modulator_stft, fs, R, 2, title="modulator")
     
     # Optional: divide spectrum of carrier frame by its own envelope 
     if flatten:
-        carrier_spec_envs = gen_lpc_spec_envs(windowed_carrier, M, nfft)
+        print("extracting carrier spectral envelopes")
+        carrier_spec_envs = gen_lpc_spec_envs(windowed_carrier, M, nfft, log=log)
         carrier_stft = carrier_stft / carrier_spec_envs
         if plot: 
             plot_spectrogram(carrier_stft, fs, R, 3, title="flattened carrier")
     
     # Multiply carrier spectral frame by modulator spectral envelops
-    modulator_spec_envs = gen_lpc_spec_envs(windowed_modulator, M, nfft)
+    print("extracting modulator spectral envelopes")
+    modulator_spec_envs = gen_lpc_spec_envs(windowed_modulator, M, nfft, log=log)
     cross_synth_stft = carrier_stft * modulator_spec_envs
     if plot: 
         plot_spectrogram(cross_synth_stft, fs, R, 4, title="cross-synthesized carrier")
-    return cross_synth_stft, get_istft(cross_synth_stft, R)
+
+    cross_synth_audio = get_istft(cross_synth_stft, R) 
+    cross_synth_audio = cross_synth_audio/np.max(cross_synth_audio)
+
+    return cross_synth_stft, cross_synth_audio
 
 
 if __name__ == "__main__":
@@ -293,7 +313,8 @@ if __name__ == "__main__":
             M, 
             flatten=flatten,
             w=w_fn,
-            plot=plot
+            plot=plot,
+            log=True
         )
     print("modulator sounds like: ")
     sd.play(modulator, fs)
