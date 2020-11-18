@@ -14,7 +14,6 @@ from IPython.display import Audio
 from scipy.io import wavfile
 from scipy import signal
 import argparse
-import simpleaudio as same
 import sounddevice as sd
 
 #==============Window Functions===============#
@@ -260,24 +259,30 @@ if __name__ == "__main__":
         w_fn = ws[w]
     fs_mod, modulator = wavfile.read(f'modulators/{modulator}')
     fs_car, carrier = wavfile.read(f'carriers/{carrier}')
-    # make sure files are the same sample rate and length
-    fs = min(fs_mod, fs_car)
-    modulator = signal.resample(modulator, (len(modulator)//fs_mod)*fs)
-    carrier = signal.resample(carrier, (len(carrier)//fs_car)*fs)
 
-    carrier = carrier[:min(min(len(modulator), len(carrier)), 100000)]
-    modulator = modulator[:min(min(len(modulator), len(carrier)), 100000)]
     if len(carrier.shape) > 1:
         carrier = carrier[:,0]
     if len(modulator.shape) > 1:
         modulator = modulator[:,0]
+
     print(f'carrier shape is {carrier.shape}, and modulator shape is {modulator.shape}')
+
+    # make sure files are the same sample rate and length
+    fs = max(fs_mod, fs_car)
+    print(f"fs_mod: {fs_mod}    fs_car: {fs_car}")
+    modulator = signal.resample(modulator, int((len(modulator)/fs_mod)*fs))
+    carrier = signal.resample(carrier, int((len(carrier)/fs_car)*fs))
+
     # Normalize signals
     carrier = carrier/(np.max(carrier))
     modulator = modulator/(np.max(modulator))
 
+    max_sample_length = fs * 5
+    carrier = carrier[:min(len(modulator), len(carrier), max_sample_length)]
+    modulator = modulator[:min(len(modulator), len(carrier), max_sample_length)]
 
     # Cross-synthesize using rectangular window with 0 overlap
+    print("Cross synthesizing! please be patient :)")
     cross_synth_stft, cross_synth_audio = \
         cross_synthesize(
             fs,
