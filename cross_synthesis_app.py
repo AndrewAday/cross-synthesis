@@ -15,7 +15,7 @@ from IPython.display import Audio
 from scipy.io import wavfile
 from scipy import signal
 import argparse
-import sounddevice as sd
+# import sounddevice as sd
 
 #==============Window Functions===============#
 
@@ -248,9 +248,12 @@ if __name__ == "__main__":
     parser.add_argument("M", help="number of linear coefficients for LPC (from 1-10)", choices=[f'{n}' for n in range(1,10)])
     parser.add_argument("L", help="window size (choose a power of 2)")
     parser.add_argument("--w", help="choose a window function (b for bartlett--triangle, h for hanning)", choices=['b', 'h'])
+    parser.add_argument("--output", "-o", help="file name to write cross-synthesized output to")
     parser.add_argument("--flatten", required=False, help="flattens the carrier spectrum by its envelope", action='store_true')
     parser.add_argument("--plot", required=False, help="show the spectrograms of the carrier, modulator and cross-synthesized signal.", action='store_true')
     args = parser.parse_args()
+
+    print(args.output)
 
     print('The carrier files are:')
     for f in range(len(carr_files)):
@@ -265,7 +268,6 @@ if __name__ == "__main__":
     
     # grabbing arguments from command line
     M = int(args.M)
-
     L = int(args.L )
     R = L
     w = args.w 
@@ -316,12 +318,15 @@ if __name__ == "__main__":
             plot=plot,
             log=True
         )
-    print("modulator sounds like: ")
-    sd.play(modulator, fs)
-    sd.wait()
-    print("carrier sounds like: ")
-    sd.play(carrier, fs)
-    sd.wait()
-    print("and together they sound like")
-    sd.play(cross_synth_audio, fs)
-    sd.wait()
+
+    wavfile.write(f"./examples/{args.output}.wav", fs, cross_synth_audio)
+
+    # print("modulator sounds like: ")
+    # sd.play(modulator, fs)
+    # sd.wait()
+    # print("carrier sounds like: ")
+    # sd.play(carrier, fs)
+    # sd.wait()
+    # print("and together they sound like")
+    # sd.play(cross_synth_audio, fs)
+    # sd.wait()

@@ -13084,6 +13084,17 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+  <a href="https://github.com/AndrewAday/cross-synthesis">Github (contains source code and presentation slides)</a>
+
+Carrier signal:
+<audio controls src="./carriers/organ_long.wav"></audio>
+
+Modulator signal:
+<audio controls src="./modulators/male_voice.wav"></audio>
+
+Cross-synthesized output:
+<audio controls src="./examples/organ-testing.wav"></audio>
+
 <h1 id="Motivation/Background">Motivation/Background<a class="anchor-link" href="#Motivation/Background">&#182;</a></h1><p>It didn't take long for the three of us to decide that the focus of our final project should be something to do with cross-synthesis. Cross-synthesis is a technique that features the blending together of two audio signals into one hybrid signal that shares the timbral qualities of both. This can be accomplished by impressing the spectral envelope of one signal onto the spectrum of another. While presumably any two audio signals can be hybridized in this fashion, it is typical practice for a spectrally narrow sound, such as speech, to be impressed upon a more spectrally rich sound such as rainfall or organ music.</p>
 <p>In short, we were motivated to develop a cross-synthesis application because we all find cross-synthesized sound to be quite appealing. We think it sounds cool, and so we set out to develop an application that allows us to make our own cross-synthesized sounds, which we can then use in our own creative projects. Our application accomplishes cross-synthesis by observing the following general procedure:</p>
 <p>The first step in making a cross-synthesis is to identify which two audio signals should be synthesized with each other. It is typical for one of the two signals to be human speech; this signal is known as the "modulating" signal. There is a much greater diversity of options for the other signal, the only recommendation is that it is spectrally rich. This signal is known as the "carrier" signal, and while it can be musical in nature (keyboards and organs are excellent carrier candidates) it does not have to be--sounds from airplanes, storms, and even cows are all fair game.</p>
